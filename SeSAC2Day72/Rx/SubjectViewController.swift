@@ -41,13 +41,56 @@ class SubjectViewController: UIViewController {
 //        replaySubject()
 //        asyncSubject()
         
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ContactCell")
+        let input = SubjectViewModel.Input(addTap: addButton.rx.tap, resetTap: resetButton.rx.tap, newTap: newAddButton.rx.tap, searchText: searchBar.rx.text)
+        
+        let output = viewModel.transform(input: input)
+        
+        output.list
+            .drive(tableView.rx.items(cellIdentifier: "ContactCell", cellType: UITableViewCell.self))  { (row, element, cell) in
+                cell.textLabel?.text = "\(element.name): \(element.age)세 (\(element.number))"
+            }
+            .disposed(by: disposeBag)
+        
+        output.addTap
+            .withUnretained(self)
+            .subscribe { (vc, _) in
+                vc.viewModel.fetchData()
+            }
+            .disposed(by: disposeBag)
+        
+        output.resetTap
+            .withUnretained(self)
+            .subscribe { (vc, _) in
+                vc.viewModel.resetData()
+            }
+            .disposed(by: disposeBag)
+        
+        output.newTap
+            .withUnretained(self)
+            .subscribe { (vc, _) in
+                vc.viewModel.newData()
+            }
+            .disposed(by: disposeBag)
+        
+        output.searchText
+            .withUnretained(self)
+            .subscribe { (vc, value) in
+                print("=======\(value)")
+                vc.viewModel.filterData(query: value)
+            }
+            .disposed(by: disposeBag)
+        
+        
+    //    tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ContactCell")
         
         viewModel.list
-            .bind(to: tableView.rx.items(cellIdentifier: "ContactCell", cellType: UITableViewCell.self)) { (row, element, cell) in
+            .asDriver(onErrorJustReturn: [])
+            .drive(tableView.rx.items(cellIdentifier: "ContactCell", cellType: UITableViewCell.self)) { (row, element, cell) in
                 cell.textLabel?.text = "\(element.name): \(element.age)세 (\(element.number))"
-                
             }
+//            .bind(to: tableView.rx.items(cellIdentifier: "ContactCell", cellType: UITableViewCell.self)) { (row, element, cell) in
+//                cell.textLabel?.text = "\(element.name): \(element.age)세 (\(element.number))"
+//            }
             .disposed(by: disposeBag)
         
         addButton.rx.tap
@@ -75,7 +118,7 @@ class SubjectViewController: UIViewController {
             //같은 값을 받지 않음
           //  .distinctUntilChanged()
         
-            .withUnretained(self)
+            .withUnretained(self) // weak self
         
             //서브스크라이브 지연
             .debounce(RxTimeInterval.seconds(1), scheduler: MainScheduler.instance)

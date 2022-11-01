@@ -31,13 +31,14 @@ class NewsViewModel {
         pageNumber.onNext(result)
     }
     
+    // Subject -> onNext , Relay -> accept
     func resetSample() {
       //  sampleNews.onNext([])
-        samplenews.accept([])
+        sampleNews.accept([])
     }
     
     func loadSample() {
     //    sampleNews.onNext(News.items)
-        samplenews.accept(News.items)
+        sampleNews.accept(News.items)
     }
 }
